@@ -1,0 +1,42 @@
+# File exported by Pixologic 3D Print Exporter for ZBrush
+# http://www.pixologic.com
+
+newmtl mat0
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100
+d 1.0
+illum 2
+map_Kd NewtonCradleTex1.jpg
+
+newmtl mat1
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100
+d 1.0
+illum 2
+map_Kd NewtonCradleTex2.jpg
+
+newmtl mat2
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100
+d 1.0
+illum 2
+map_Kd NewtonCradleTex3.jpg
+
+newmtl mat3
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100
+d 1.0
+illum 2
+map_Kd NewtonCradleTex4.jpg
+
+newmtl mat4
+Kd 1.0 1.0 1.0
+Ks 1.0 1.0 1.0
+Ns 100
+d 1.0
+illum 2
+map_Kd NewtonCradleTex5.jpg
