@@ -48,10 +48,10 @@ public class ChangeMassScript : MonoBehaviour
     private bool isPaused = false;
     private float frozenVelocity = 0f;
 
-    private float maxHeight;
-
     private bool isSlowMotionActive = false; // Estado de cámara lenta
     public float slowMotionScale = 0.2f; // Escala de tiempo para cámara lenta
+
+    private PhysicMaterial objectPhysicMaterial; // Material físico del objeto
 
     void Start()
     {
@@ -61,7 +61,9 @@ public class ChangeMassScript : MonoBehaviour
         initialPosition = transform.position;
         initialRotation = transform.rotation;
 
-        maxHeight = transform.position.y;
+        // Crear y asignar el material físico al collider
+        objectPhysicMaterial = new PhysicMaterial();
+        objectCollider.material = objectPhysicMaterial;
 
         if (toggleChartButton != null)
         {
@@ -133,7 +135,6 @@ public class ChangeMassScript : MonoBehaviour
         objeto3DAltura.SetActive(false);
         panel.SetActive(true);
         alturaText.gameObject.SetActive(false);
-        alturaText.gameObject.SetActive(false);
         pieChartObject.SetActive(false);
         playButton.gameObject.SetActive(false);
     }
@@ -161,12 +162,18 @@ public class ChangeMassScript : MonoBehaviour
                 Physics.gravity = new Vector3(0, -9.81f * gravityScale, 0);
             }
 
-            if (frictionSlider != null && objectCollider != null)
+            if (frictionSlider != null && objectPhysicMaterial != null)
             {
-                PhysicMaterial mat = new PhysicMaterial();
-                mat.dynamicFriction = Mathf.Lerp(0f, 1f, frictionSlider.value);
-                mat.staticFriction = Mathf.Lerp(0f, 1f, frictionSlider.value);
-                objectCollider.material = mat;
+                float frictionValue = Mathf.Lerp(0f, 1f, frictionSlider.value);
+                objectPhysicMaterial.dynamicFriction = frictionValue;
+                objectPhysicMaterial.staticFriction = frictionValue;
+
+                // Aplicar fuerza de fricción proporcional a la velocidad
+                if (rb.velocity.magnitude > 0.01f) // Evitar aplicar fuerza si está casi en reposo
+                {
+                    Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
+                    rb.AddForce(frictionForce);
+                }
             }
 
             CalculateEnergies();
@@ -227,8 +234,7 @@ public class ChangeMassScript : MonoBehaviour
         if (alturaText != null)
         {
             float currentHeight = transform.position.y;
-            float relativeHeight = maxHeight - currentHeight;
-            alturaText.text = "Altura: " + relativeHeight.ToString("F2") + " m";
+            alturaText.text = "Altura: " + currentHeight.ToString("F2") + " m";
         }
     }
 
@@ -270,10 +276,9 @@ public class ChangeMassScript : MonoBehaviour
         }
 
         if (panel != null)
-    {
-        // Cambia solo el estado del panel, no de otros elementos
-        panel.SetActive(!panel.activeSelf);
-    }
+        {
+            panel.SetActive(!panel.activeSelf);
+        }
     }
 
     public void TogglePieChartVisibility()
@@ -398,6 +403,4 @@ public class SliderValueText : MonoBehaviour
     {
         textComp.text = val.ToString("F2");  // Muestra el valor con 2 decimales
     }
-
-
 }
