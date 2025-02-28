@@ -15,18 +15,23 @@ public class ChangeMassScript : MonoBehaviour
     public Button toggleChartButton;
 
     public TextMeshProUGUI velocidadText;
+    public GameObject objeto3D; //Rapidez
+
     public TextMeshProUGUI alturaText;
-    public GameObject objeto3D;
     public GameObject objeto3DAltura;
+
     public GameObject panel;
     public GameObject chartDataContainer;
 
     public Button toggleVisibilityButton;
+
     public Button freezeButton;
     public Button resetPositionButton;
     public Button playButton;
+
     public Button showHeightButton;
     public Button hideHeightButton;
+
     public Button slowMotionButton; // Botón de cámara lenta
     public Button showChartDataButton;    // Botón para mostrar los datos
     public Button hideChartDataButton;    // Botón para ocultar los datos
@@ -240,6 +245,7 @@ public class ChangeMassScript : MonoBehaviour
 
     public void ShowHeightText()
     {
+        Debug.Log("ShowHeightText() ejecutado");
         if (alturaText != null)
         {
             alturaText.gameObject.SetActive(true);
@@ -396,6 +402,7 @@ public class SliderValueText : MonoBehaviour
         {
             UpdateText(slider.value);
             slider.onValueChanged.AddListener(UpdateText);
+
         }
     }
 
