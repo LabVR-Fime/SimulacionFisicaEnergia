@@ -179,7 +179,7 @@ public class ChangeMassScript : MonoBehaviour
             CalculateEnergies();
             UpdatePieChart();
             UpdateVelocityText();
-            UpdateHeightText();
+            
         }
     }
 
@@ -229,14 +229,7 @@ public class ChangeMassScript : MonoBehaviour
         }
     }
 
-    void UpdateHeightText()
-    {
-        if (alturaText != null)
-        {
-            float currentHeight = transform.position.y;
-            alturaText.text = "Altura: " + currentHeight.ToString("F2") + " m";
-        }
-    }
+
 
     public void ShowHeightText()
     {
