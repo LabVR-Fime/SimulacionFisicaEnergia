@@ -317,7 +317,6 @@ public class ChangeMassScript : MonoBehaviour
 
         frozenVelocity = 0f;
         velocidadText.text = "0.00 m/s";
-        alturaText.text = "Altura: 0.00 m";
 
         if (isPaused)
         {
