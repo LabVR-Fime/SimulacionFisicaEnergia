@@ -29,4 +29,25 @@ public class GameManager : MonoBehaviour
             Levels[currentLevel].SetActive(true);
         }
     }
+
+    public void previousLevel()
+    {
+        // Si no estamos en el primer nivel.
+        if (currentLevel > 0)
+        {
+            // Desactivar el nivel actual.
+            Levels[currentLevel].SetActive(false);
+
+            // Regresar al nivel anterior.
+            currentLevel--;
+            Levels[currentLevel].SetActive(true);
+
+            // Restaurar la rotación de la puerta si es necesario.
+            if (Door != null)
+            {
+                Vector3 currentRotation = Door.transform.eulerAngles;
+                Door.transform.eulerAngles = new Vector3(currentRotation.x, 0, currentRotation.z); // Vuelve a su posición inicial.
+            }
+        }
+    }
 }
