@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         RotateView();
-        HandleInteraction(); // Agregamos interacción con la UI
+        HandleInteraction(); // Agregamos interacciï¿½n con la UI
     }
 
     void FixedUpdate()
@@ -65,7 +65,7 @@ public class PlayerController : MonoBehaviour
                 var interactable = hit.collider.GetComponent<IInteractable>();
                 if (interactable != null)
                 {
-                    interactable.Interact(); // Llamamos a la función Interact
+                    interactable.Interact(); // Llamamos a la funciï¿½n Interact
                 }
             }
         }
