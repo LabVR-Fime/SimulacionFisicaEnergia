@@ -53,6 +53,19 @@ public class ChangeMassScript : MonoBehaviour
 
     private PhysicMaterial objectPhysicMaterial; // Material físico del objeto
 
+    public Transform movingObject; // Objeto que se mueve en la pista
+    public TextMeshProUGUI heightText; // Texto para mostrar la altura
+
+    [SerializeField] private float realMaxHeight = 5.85f; // 🔹 Máxima altura real en metros (editable)
+    [SerializeField] private float realMinHeight = 0f;    // 🔹 Mínima altura real en metros (editable)
+
+    [SerializeField] private float unityMaxHeight = 0.4f;  // 🔹 Máxima altura en Unity (editable)
+    [SerializeField] private float unityMinHeight = -0.4f; // 🔹 Altura mínima en Unity (ajustado)
+
+    private float scaleFactor; // 🔹 Factor de escala para convertir la altura en Unity a metros reales
+
+    private float realHeight;  // Stores the calculated real height
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -64,6 +77,8 @@ public class ChangeMassScript : MonoBehaviour
         // Crear y asignar el material físico al collider
         objectPhysicMaterial = new PhysicMaterial();
         objectCollider.material = objectPhysicMaterial;
+
+        scaleFactor = (realMaxHeight - realMinHeight) / (unityMaxHeight - unityMinHeight);
 
         if (toggleChartButton != null)
         {
@@ -141,54 +156,66 @@ public class ChangeMassScript : MonoBehaviour
 
     void Update()
     {
-        if (!isPaused)
-        {
-            if (scaleSlider != null)
-            {
-                float scaleSliderNumber = Mathf.Lerp(0.1f, 0.2f, scaleSlider.value / 100f);
-                Vector3 scale = new Vector3(scaleSliderNumber, scaleSliderNumber, scaleSliderNumber);
-                transform.localScale = scale;
-
-                float mass = scaleSliderNumber * 100f;
-                if (rb != null)
-                {
-                    rb.mass = mass;
-                }
-            }
-
-            if (gravitySlider != null)
-            {
-                float gravityScale = Mathf.Lerp(0.1f, 2f, gravitySlider.value);
-                Physics.gravity = new Vector3(0, -9.81f * gravityScale, 0);
-            }
-
-            if (frictionSlider != null && objectPhysicMaterial != null)
-            {
-                float frictionValue = Mathf.Lerp(0f, 1f, frictionSlider.value);
-                objectPhysicMaterial.dynamicFriction = frictionValue;
-                objectPhysicMaterial.staticFriction = frictionValue;
-
-                // Aplicar fuerza de fricción proporcional a la velocidad
-                if (rb.velocity.magnitude > 0.01f) // Evitar aplicar fuerza si está casi en reposo
-                {
-                    Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
-                    rb.AddForce(frictionForce);
-                }
-            }
-
-            CalculateEnergies();
-            UpdatePieChart();
-            UpdateVelocityText();
-            
-        }
-    }
-
-    void CalculateEnergies()
+        if (movingObject != null && heightText != null)
     {
-        kineticEnergy = 0.5f * rb.mass * rb.velocity.sqrMagnitude;
-        potentialEnergy = rb.mass * Mathf.Abs(Physics.gravity.y) * transform.position.y;
-        thermalEnergy = frictionSlider.value * rb.mass * rb.velocity.magnitude;
+        // Compute height in Unity and convert to real-world meters
+        float unityHeight = movingObject.position.y - unityMinHeight;
+        realHeight = unityHeight * scaleFactor + realMinHeight;  // Store real height
+
+        // Update UI text
+        heightText.text = "Altura: " + realHeight.ToString("F2") + " m";
     }
+
+    if (!isPaused)
+    {
+        // Control the gravity based on the slider
+        if (gravitySlider != null)
+        {
+            // Ajusta la gravedad entre 1.0 m/s² y 26.0 m/s²
+            float gravityScale = Mathf.Lerp(1.0f, 26.0f, gravitySlider.value);
+            Physics.gravity = new Vector3(0, -gravityScale, 0);  // Aplica la gravedad ajustada en el eje Y
+        }
+
+        // Aplica fricción si es necesario
+        if (frictionSlider != null && objectPhysicMaterial != null)
+        {
+            float frictionValue = Mathf.Lerp(0f, 1f, frictionSlider.value);
+            objectPhysicMaterial.dynamicFriction = frictionValue;
+            objectPhysicMaterial.staticFriction = frictionValue;
+
+            // Aplicar fuerza de fricción proporcional a la velocidad
+            if (rb.velocity.magnitude > 0.01f) // Evitar aplicar fuerza si está casi en reposo
+            {
+                Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
+                rb.AddForce(frictionForce);
+            }
+        }
+
+        // Energías calculadas
+        CalculateEnergies();
+        UpdatePieChart();
+        UpdateVelocityText();
+    }
+    }
+
+        void CalculateEnergies()
+        {
+            float mass = rb.mass;  // Masa en kg
+            float gravity = Mathf.Abs(Physics.gravity.y);  // Gravedad en m/s² (ahora debería cambiar con el slider)
+            float height = realHeight;  // Altura en metros reales
+            float velocity = rb.velocity.magnitude;  // Velocidad en m/s
+            float friction = frictionSlider.value;  // Coeficiente de fricción
+            float deltaTime = Time.deltaTime;  // Tiempo transcurrido en segundos
+
+            // Energía cinética (Ec = 1/2 * m * v^2)
+            kineticEnergy = 0.5f * mass * velocity * velocity;
+
+            // Energía potencial gravitatoria (Ep = m * g * h)
+            potentialEnergy = mass * gravity * height;
+
+            // Energía térmica aproximada (Et = µ * m * g * v * t)
+            thermalEnergy += friction * mass * gravity * velocity * deltaTime;
+        }
 
     void UpdatePieChart()
     {
