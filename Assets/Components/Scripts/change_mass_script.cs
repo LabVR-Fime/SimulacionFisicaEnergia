@@ -195,6 +195,13 @@ public class ChangeMassScript : MonoBehaviour
         CalculateEnergies();
         UpdatePieChart();
         UpdateVelocityText();
+
+        // Mostrar los valores en la consola
+        Debug.Log("Gravedad: " + Mathf.Abs(Physics.gravity.y) + " m/s²");
+        Debug.Log("Masa: " + rb.mass + " kg");
+        Debug.Log("Fricción: " + Mathf.Lerp(0f, 1f, frictionSlider.value));
+        Debug.Log("Altura: " + realHeight.ToString("F2") + " m");
+        Debug.Log("Velocidad: " + rb.velocity.magnitude.ToString("F2") + " m/s");
     }
     }
 
