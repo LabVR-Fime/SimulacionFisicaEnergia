@@ -38657,7 +38657,7 @@ Transform:
   m_GameObject: {fileID: 86560341}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.412, y: 0.8614001, z: 0.33899045}
+  m_LocalPosition: {x: -2.412, y: 0.812, z: -0.01}
   m_LocalScale: {x: 0.88137335, y: 2.1870892, z: 0.11350568}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -68026,6 +68026,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 490389284}
   m_CullTransparentMesh: 1
+--- !u!1 &490584876
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 490584877}
+  m_Layer: 0
+  m_Name: Rampa_Inicio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &490584877
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 490584876}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.877, y: 0.464, z: -22.902}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &492258825
 GameObject:
   m_ObjectHideFlags: 0
@@ -87225,7 +87256,7 @@ Transform:
   m_GameObject: {fileID: 709903064}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3031, y: 0.39687926, z: 0}
+  m_LocalPosition: {x: 1.3031, y: -0.079, z: 0}
   m_LocalScale: {x: 1.6161882, y: 0.20619999, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -97833,6 +97864,8 @@ MonoBehaviour:
   realMinHeight: 0
   unityMaxHeight: 0.4
   unityMinHeight: -0.4
+  rampaInicio: {fileID: 490584877}
+  rampaFin: {fileID: 1556137526}
 --- !u!54 &804940438
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -147548,7 +147581,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 691785772}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 26
+  m_MaxValue: 20
   m_WholeNumbers: 1
   m_Value: 0
   m_OnValueChanged:
@@ -200315,6 +200348,37 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1 &1556137525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1556137526}
+  m_Layer: 0
+  m_Name: Rampa_Fin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1556137526
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1556137525}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.65, y: 0.464, z: -22.902}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &1558401388
 Mesh:
   m_ObjectHideFlags: 0
@@ -259280,3 +259344,5 @@ SceneRoots:
   - {fileID: 1161524944}
   - {fileID: 1741194300}
   - {fileID: 1703290328}
+  - {fileID: 490584877}
+  - {fileID: 1556137526}

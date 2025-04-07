@@ -9,11 +9,9 @@ public class ChangeMassScript : MonoBehaviour
     public Slider scaleSlider;
     public Slider gravitySlider;
     public Slider frictionSlider;
-
     public PieChart pieChart;
     public GameObject pieChartObject;
     public Button toggleChartButton;
-
     public TextMeshProUGUI velocidadText;
     public TextMeshProUGUI alturaText;
     public GameObject objeto3D;
@@ -65,6 +63,9 @@ public class ChangeMassScript : MonoBehaviour
     private float scaleFactor; // 🔹 Factor de escala para convertir la altura en Unity a metros reales
 
     private float realHeight;  // Stores the calculated real height
+
+    public Transform rampaInicio;
+    public Transform rampaFin;
 
     void Start()
     {
@@ -157,53 +158,58 @@ public class ChangeMassScript : MonoBehaviour
     void Update()
     {
         if (movingObject != null && heightText != null)
-    {
-        // Compute height in Unity and convert to real-world meters
-        float unityHeight = movingObject.position.y - unityMinHeight;
-        realHeight = unityHeight * scaleFactor + realMinHeight;  // Store real height
-
-        // Update UI text
-        heightText.text = "Altura: " + realHeight.ToString("F2") + " m";
-    }
-
-    if (!isPaused)
-    {
-        // Control the gravity based on the slider
-        if (gravitySlider != null)
         {
-            // Ajusta la gravedad entre 1.0 m/s² y 26.0 m/s²
-            float gravityScale = Mathf.Lerp(1.0f, 26.0f, gravitySlider.value);
-            Physics.gravity = new Vector3(0, -gravityScale, 0);  // Aplica la gravedad ajustada en el eje Y
+            // Compute height in Unity and convert to real-world meters
+            float unityHeight = movingObject.position.y - unityMinHeight;
+            realHeight = unityHeight * scaleFactor + realMinHeight;  // Store real height
+
+            // Update UI text
+            heightText.text = "Altura: " + realHeight.ToString("F2") + " m";
         }
 
-        // Aplica fricción si es necesario
-        if (frictionSlider != null && objectPhysicMaterial != null)
+        if (!isPaused)
         {
-            float frictionValue = Mathf.Lerp(0f, 1f, frictionSlider.value);
-            objectPhysicMaterial.dynamicFriction = frictionValue;
-            objectPhysicMaterial.staticFriction = frictionValue;
-
-            // Aplicar fuerza de fricción proporcional a la velocidad
-            if (rb.velocity.magnitude > 0.01f) // Evitar aplicar fuerza si está casi en reposo
+            // Control the gravity based on the slider
+            if (gravitySlider != null)
             {
-                Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
-                rb.AddForce(frictionForce);
+                float gravityScale = gravitySlider.value; // valor directo del slider
+                Physics.gravity = new Vector3(0, -gravityScale, 0);
             }
+
+            // Aplica fricción si es necesario
+            if (frictionSlider != null && objectPhysicMaterial != null)
+            {
+                float frictionValue = Mathf.Lerp(0f, 0f, frictionSlider.value);
+                objectPhysicMaterial.dynamicFriction = frictionValue;
+                objectPhysicMaterial.staticFriction = frictionValue;
+
+                if (frictionValue > 0f && rb.velocity.magnitude > 0.0f)
+                {
+                    Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
+                    rb.AddForce(frictionForce);
+                }
+            }
+
+            // Agregar impulso cuando el objeto pase el final de la rampa
+            if (movingObject.position.x > rampaFin.position.x) // Si el objeto pasa el final de la rampa
+            {
+                rb.AddForce(Vector3.back * 5f, ForceMode.VelocityChange); // Impulsa al objeto hacia atrás
+            }
+
+            // Energías calculadas
+            CalculateEnergies();
+            UpdatePieChart();
+            UpdateVelocityText();
+
+            // Mostrar los valores en la consola
+            Debug.Log("Gravedad: " + Mathf.Abs(Physics.gravity.y) + " m/s²");
+            Debug.Log("Masa: " + rb.mass + " kg");
+            Debug.Log("Fricción: " + Mathf.Lerp(0f, 1f, frictionSlider.value));
+            Debug.Log("Altura: " + realHeight.ToString("F2") + " m");
+            Debug.Log("Velocidad: " + rb.velocity.magnitude.ToString("F2") + " m/s");
         }
-
-        // Energías calculadas
-        CalculateEnergies();
-        UpdatePieChart();
-        UpdateVelocityText();
-
-        // Mostrar los valores en la consola
-        Debug.Log("Gravedad: " + Mathf.Abs(Physics.gravity.y) + " m/s²");
-        Debug.Log("Masa: " + rb.mass + " kg");
-        Debug.Log("Fricción: " + Mathf.Lerp(0f, 1f, frictionSlider.value));
-        Debug.Log("Altura: " + realHeight.ToString("F2") + " m");
-        Debug.Log("Velocidad: " + rb.velocity.magnitude.ToString("F2") + " m/s");
     }
-    }
+
 
         void CalculateEnergies()
         {
