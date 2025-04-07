@@ -9,11 +9,9 @@ public class ChangeMassScript : MonoBehaviour
     public Slider scaleSlider;
     public Slider gravitySlider;
     public Slider frictionSlider;
-
     public PieChart pieChart;
     public GameObject pieChartObject;
     public Button toggleChartButton;
-
     public TextMeshProUGUI velocidadText;
     public TextMeshProUGUI alturaText;
     public GameObject objeto3D;
@@ -48,10 +46,26 @@ public class ChangeMassScript : MonoBehaviour
     private bool isPaused = false;
     private float frozenVelocity = 0f;
 
-    private float maxHeight;
-
     private bool isSlowMotionActive = false; // Estado de cámara lenta
     public float slowMotionScale = 0.2f; // Escala de tiempo para cámara lenta
+
+    private PhysicMaterial objectPhysicMaterial; // Material físico del objeto
+
+    public Transform movingObject; // Objeto que se mueve en la pista
+    public TextMeshProUGUI heightText; // Texto para mostrar la altura
+
+    [SerializeField] private float realMaxHeight = 5.85f; // 🔹 Máxima altura real en metros (editable)
+    [SerializeField] private float realMinHeight = 0f;    // 🔹 Mínima altura real en metros (editable)
+
+    [SerializeField] private float unityMaxHeight = 0.4f;  // 🔹 Máxima altura en Unity (editable)
+    [SerializeField] private float unityMinHeight = -0.4f; // 🔹 Altura mínima en Unity (ajustado)
+
+    private float scaleFactor; // 🔹 Factor de escala para convertir la altura en Unity a metros reales
+
+    private float realHeight;  // Stores the calculated real height
+
+    public Transform rampaInicio;
+    public Transform rampaFin;
 
     void Start()
     {
@@ -61,7 +75,11 @@ public class ChangeMassScript : MonoBehaviour
         initialPosition = transform.position;
         initialRotation = transform.rotation;
 
-        maxHeight = transform.position.y;
+        // Crear y asignar el material físico al collider
+        objectPhysicMaterial = new PhysicMaterial();
+        objectCollider.material = objectPhysicMaterial;
+
+        scaleFactor = (realMaxHeight - realMinHeight) / (unityMaxHeight - unityMinHeight);
 
         if (toggleChartButton != null)
         {
@@ -133,55 +151,84 @@ public class ChangeMassScript : MonoBehaviour
         objeto3DAltura.SetActive(false);
         panel.SetActive(true);
         alturaText.gameObject.SetActive(false);
-        alturaText.gameObject.SetActive(false);
         pieChartObject.SetActive(false);
         playButton.gameObject.SetActive(false);
     }
 
     void Update()
     {
+        if (movingObject != null && heightText != null)
+        {
+            // Compute height in Unity and convert to real-world meters
+            float unityHeight = movingObject.position.y - unityMinHeight;
+            realHeight = unityHeight * scaleFactor + realMinHeight;  // Store real height
+
+            // Update UI text
+            heightText.text = "Altura: " + realHeight.ToString("F2") + " m";
+        }
+
         if (!isPaused)
         {
-            if (scaleSlider != null)
+            // Control the gravity based on the slider
+            if (gravitySlider != null)
             {
-                float scaleSliderNumber = Mathf.Lerp(0.1f, 0.2f, scaleSlider.value / 100f);
-                Vector3 scale = new Vector3(scaleSliderNumber, scaleSliderNumber, scaleSliderNumber);
-                transform.localScale = scale;
+                float gravityScale = gravitySlider.value; // valor directo del slider
+                Physics.gravity = new Vector3(0, -gravityScale, 0);
+            }
 
-                float mass = scaleSliderNumber * 100f;
-                if (rb != null)
+            // Aplica fricción si es necesario
+            if (frictionSlider != null && objectPhysicMaterial != null)
+            {
+                float frictionValue = Mathf.Lerp(0f, 0f, frictionSlider.value);
+                objectPhysicMaterial.dynamicFriction = frictionValue;
+                objectPhysicMaterial.staticFriction = frictionValue;
+
+                if (frictionValue > 0f && rb.velocity.magnitude > 0.0f)
                 {
-                    rb.mass = mass;
+                    Vector3 frictionForce = -rb.velocity.normalized * frictionValue * rb.mass;
+                    rb.AddForce(frictionForce);
                 }
             }
 
-            if (gravitySlider != null)
+            // Agregar impulso cuando el objeto pase el final de la rampa
+            if (movingObject.position.x > rampaFin.position.x) // Si el objeto pasa el final de la rampa
             {
-                float gravityScale = Mathf.Lerp(0.1f, 2f, gravitySlider.value);
-                Physics.gravity = new Vector3(0, -9.81f * gravityScale, 0);
+                rb.AddForce(Vector3.back * 5f, ForceMode.VelocityChange); // Impulsa al objeto hacia atrás
             }
 
-            if (frictionSlider != null && objectCollider != null)
-            {
-                PhysicMaterial mat = new PhysicMaterial();
-                mat.dynamicFriction = Mathf.Lerp(0f, 1f, frictionSlider.value);
-                mat.staticFriction = Mathf.Lerp(0f, 1f, frictionSlider.value);
-                objectCollider.material = mat;
-            }
-
+            // Energías calculadas
             CalculateEnergies();
             UpdatePieChart();
             UpdateVelocityText();
-            UpdateHeightText();
+
+            // Mostrar los valores en la consola
+            Debug.Log("Gravedad: " + Mathf.Abs(Physics.gravity.y) + " m/s²");
+            Debug.Log("Masa: " + rb.mass + " kg");
+            Debug.Log("Fricción: " + Mathf.Lerp(0f, 1f, frictionSlider.value));
+            Debug.Log("Altura: " + realHeight.ToString("F2") + " m");
+            Debug.Log("Velocidad: " + rb.velocity.magnitude.ToString("F2") + " m/s");
         }
     }
 
-    void CalculateEnergies()
-    {
-        kineticEnergy = 0.5f * rb.mass * rb.velocity.sqrMagnitude;
-        potentialEnergy = rb.mass * Mathf.Abs(Physics.gravity.y) * transform.position.y;
-        thermalEnergy = frictionSlider.value * rb.mass * rb.velocity.magnitude;
-    }
+
+        void CalculateEnergies()
+        {
+            float mass = rb.mass;  // Masa en kg
+            float gravity = Mathf.Abs(Physics.gravity.y);  // Gravedad en m/s² (ahora debería cambiar con el slider)
+            float height = realHeight;  // Altura en metros reales
+            float velocity = rb.velocity.magnitude;  // Velocidad en m/s
+            float friction = frictionSlider.value;  // Coeficiente de fricción
+            float deltaTime = Time.deltaTime;  // Tiempo transcurrido en segundos
+
+            // Energía cinética (Ec = 1/2 * m * v^2)
+            kineticEnergy = 0.5f * mass * velocity * velocity;
+
+            // Energía potencial gravitatoria (Ep = m * g * h)
+            potentialEnergy = mass * gravity * height;
+
+            // Energía térmica aproximada (Et = µ * m * g * v * t)
+            thermalEnergy += friction * mass * gravity * velocity * deltaTime;
+        }
 
     void UpdatePieChart()
     {
@@ -222,15 +269,7 @@ public class ChangeMassScript : MonoBehaviour
         }
     }
 
-    void UpdateHeightText()
-    {
-        if (alturaText != null)
-        {
-            float currentHeight = transform.position.y;
-            float relativeHeight = maxHeight - currentHeight;
-            alturaText.text = "Altura: " + relativeHeight.ToString("F2") + " m";
-        }
-    }
+
 
     public void ShowHeightText()
     {
@@ -270,10 +309,9 @@ public class ChangeMassScript : MonoBehaviour
         }
 
         if (panel != null)
-    {
-        // Cambia solo el estado del panel, no de otros elementos
-        panel.SetActive(!panel.activeSelf);
-    }
+        {
+            panel.SetActive(!panel.activeSelf);
+        }
     }
 
     public void TogglePieChartVisibility()
@@ -319,7 +357,6 @@ public class ChangeMassScript : MonoBehaviour
 
         frozenVelocity = 0f;
         velocidadText.text = "0.00 m/s";
-        alturaText.text = "Altura: 0.00 m";
 
         if (isPaused)
         {
@@ -398,6 +435,4 @@ public class SliderValueText : MonoBehaviour
     {
         textComp.text = val.ToString("F2");  // Muestra el valor con 2 decimales
     }
-
-
 }

@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "SimulacionFisicaEnergia.sln"
+    "dotnet.defaultSolution": "Simulacion-Energia-Cinetica-V4.sln"
 }
