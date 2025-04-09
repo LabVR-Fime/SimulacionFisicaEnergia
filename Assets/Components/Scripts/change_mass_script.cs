@@ -64,8 +64,29 @@ public class ChangeMassScript : MonoBehaviour
 
     private float realHeight;  // Stores the calculated real height
 
-    public Transform rampaInicio;
-    public Transform rampaFin;
+    private float totalEnergy;
+    [SerializeField] private bool perfectConservation = true; // Activa/desactiva conservación perfecta
+    [SerializeField] private float energyTolerance = 0.05f; // 5% de tolerancia
+
+    public List<Transform> trackPoints; // Puntos que definen la pista
+    public LineRenderer trackRenderer;  
+
+    [System.Serializable]
+    public class KeyPoint
+    {
+        public Transform point;
+        public float expectedHeight;
+        public float expectedSpeed;
+    }
+
+    public List<KeyPoint> keyPoints;
+
+    [Range(0.1f, 20f)] public float gravityStrength = 9.8f; // Gravedad terrestre estándar
+    [Range(0f, 0.1f)] public float frictionCoefficient = 0.01f; // Fricción muy baja
+    [Range(0.8f, 1f)] public float bounciness = 0.95f; // Casi perfectamente elástico
+    public bool enableEnergyConservation = true; // Activar conservación de energía
+
+    public List<Transform> trackKeyPoints = new List<Transform>();
 
     void Start()
     {
@@ -78,6 +99,10 @@ public class ChangeMassScript : MonoBehaviour
         // Crear y asignar el material físico al collider
         objectPhysicMaterial = new PhysicMaterial();
         objectCollider.material = objectPhysicMaterial;
+
+        CalculateTotalEnergy(); 
+        DrawTrack();
+        CheckKeyPoints();
 
         scaleFactor = (realMaxHeight - realMinHeight) / (unityMaxHeight - unityMinHeight);
 
@@ -146,6 +171,7 @@ public class ChangeMassScript : MonoBehaviour
         {
             hideChartDataButton.gameObject.SetActive(false);
         }
+        
 
         objeto3D.SetActive(false);
         objeto3DAltura.SetActive(false);
@@ -153,6 +179,12 @@ public class ChangeMassScript : MonoBehaviour
         alturaText.gameObject.SetActive(false);
         pieChartObject.SetActive(false);
         playButton.gameObject.SetActive(false);
+
+        objectPhysicMaterial.dynamicFriction = 0.05f;
+        objectPhysicMaterial.staticFriction = 0.05f;
+        objectPhysicMaterial.bounciness = 0.9f; // Alta elasticidad
+        objectPhysicMaterial.frictionCombine = PhysicMaterialCombine.Minimum;
+        objectPhysicMaterial.bounceCombine = PhysicMaterialCombine.Maximum;
     }
 
     void Update()
@@ -169,11 +201,17 @@ public class ChangeMassScript : MonoBehaviour
 
         if (!isPaused)
         {
-            // Control the gravity based on the slider
+                // Gravedad (sin cambios)
             if (gravitySlider != null)
             {
-                float gravityScale = gravitySlider.value; // valor directo del slider
+                float gravityScale = gravitySlider.value;
                 Physics.gravity = new Vector3(0, -gravityScale, 0);
+            }
+
+            // Conservación de energía
+            if (perfectConservation)
+            {
+                EnforceEnergyConservation();
             }
 
             // Aplica fricción si es necesario
@@ -190,11 +228,6 @@ public class ChangeMassScript : MonoBehaviour
                 }
             }
 
-            // Agregar impulso cuando el objeto pase el final de la rampa
-            if (movingObject.position.x > rampaFin.position.x) // Si el objeto pasa el final de la rampa
-            {
-                rb.AddForce(Vector3.back * 5f, ForceMode.VelocityChange); // Impulsa al objeto hacia atrás
-            }
 
             // Energías calculadas
             CalculateEnergies();
@@ -210,24 +243,78 @@ public class ChangeMassScript : MonoBehaviour
         }
     }
 
+    void EnforceEnergyConservation()
+    {
+        float mass = rb.mass;
+        float gravity = Mathf.Abs(Physics.gravity.y);
+        float height = realHeight;
+        float velocity = rb.velocity.magnitude;
+
+        float currentEnergy = 0.5f * mass * velocity * velocity + mass * gravity * height;
+        float energyRatio = currentEnergy / totalEnergy;
+
+        // Si la energía actual excede la inicial (con tolerancia)
+        if (energyRatio > 1f + energyTolerance)
+        {
+            // Calcular velocidad máxima permitida
+            float maxAllowedKinetic = totalEnergy - mass * gravity * height;
+            if (maxAllowedKinetic > 0)
+            {
+                float maxVelocity = Mathf.Sqrt(2 * maxAllowedKinetic / mass);
+                rb.velocity = rb.velocity.normalized * maxVelocity;
+            }
+            else
+            {
+                rb.velocity = Vector3.zero;
+            }
+        }
+    }
+
+    void DrawTrack()
+    {
+        if (trackRenderer != null && trackPoints.Count > 1)
+        {
+            trackRenderer.positionCount = trackPoints.Count;
+            for (int i = 0; i < trackPoints.Count; i++)
+            {
+                trackRenderer.SetPosition(i, trackPoints[i].position);
+            }
+        }
+    }
 
         void CalculateEnergies()
         {
-            float mass = rb.mass;  // Masa en kg
-            float gravity = Mathf.Abs(Physics.gravity.y);  // Gravedad en m/s² (ahora debería cambiar con el slider)
-            float height = realHeight;  // Altura en metros reales
-            float velocity = rb.velocity.magnitude;  // Velocidad en m/s
-            float friction = frictionSlider.value;  // Coeficiente de fricción
-            float deltaTime = Time.deltaTime;  // Tiempo transcurrido en segundos
+            float mass = rb.mass;
+            float gravity = Mathf.Abs(Physics.gravity.y);
+            float height = realHeight;
+            float velocity = rb.velocity.magnitude;
 
-            // Energía cinética (Ec = 1/2 * m * v^2)
+            // Energías actuales
             kineticEnergy = 0.5f * mass * velocity * velocity;
-
-            // Energía potencial gravitatoria (Ep = m * g * h)
             potentialEnergy = mass * gravity * height;
+            thermalEnergy = 0f; // En un sistema ideal, no hay energía térmica
 
-            // Energía térmica aproximada (Et = µ * m * g * v * t)
-            thermalEnergy += friction * mass * gravity * velocity * deltaTime;
+            // Forzar conservación de energía ajustando la velocidad
+            if (kineticEnergy + potentialEnergy > totalEnergy * 1.05f) // 5% de tolerancia
+            {
+                // Si hay exceso de energía, reduce la velocidad
+                float maxAllowedKinetic = totalEnergy - potentialEnergy;
+                if (maxAllowedKinetic > 0)
+                {
+                    float maxVelocity = Mathf.Sqrt(2 * maxAllowedKinetic / mass);
+                    rb.velocity = rb.velocity.normalized * Mathf.Min(velocity, maxVelocity);
+                }
+            }
+        }
+
+        void CalculateTotalEnergy()
+        {
+            float mass = rb.mass;
+            float gravity = Mathf.Abs(Physics.gravity.y);
+            float initialHeight = (initialPosition.y - unityMinHeight) * scaleFactor + realMinHeight;
+            
+            // Energía total inicial (solo potencial, ya que parte del reposo)
+            totalEnergy = mass * gravity * initialHeight;
         }
 
     void UpdatePieChart()
@@ -249,6 +336,20 @@ public class ChangeMassScript : MonoBehaviour
         if (thermalEnergyText != null)
         {
             thermalEnergyText.text = "Termica:                               " + thermalEnergy.ToString("F2") + "";
+        }
+    }
+
+    void CheckKeyPoints()
+    {
+        foreach (KeyPoint kp in keyPoints)
+        {
+            float distance = Vector3.Distance(transform.position, kp.point.position);
+            if (distance < 0.1f) // Cuando pasa cerca de un punto clave
+            {
+                Debug.Log($"Punto clave alcanzado! " +
+                        $"Altura: {realHeight.ToString("F2")} (esperada: {kp.expectedHeight}), " +
+                        $"Velocidad: {rb.velocity.magnitude.ToString("F2")} (esperada: {kp.expectedSpeed})");
+            }
         }
     }
 
@@ -353,6 +454,7 @@ public class ChangeMassScript : MonoBehaviour
             transform.position = initialPosition;
             transform.rotation = initialRotation;
             rb.velocity = Vector3.zero;
+            CalculateTotalEnergy();
         }
 
         frozenVelocity = 0f;
