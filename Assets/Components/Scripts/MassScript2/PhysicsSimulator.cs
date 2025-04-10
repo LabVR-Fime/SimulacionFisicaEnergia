@@ -74,9 +74,6 @@ public class PhysicsSimulator : MonoBehaviour
     void Update()
     {
         UpdateUI();
-        Debug.Log($"Gravedad: {Physics.gravity.y}");
-    Debug.Log($"Velocidad: {rb.velocity.magnitude}");
-    Debug.Log($"Posición Y: {transform.position.y}");
     }
 
     void EnforceEnergyConservation()
